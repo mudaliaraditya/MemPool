@@ -9,7 +9,7 @@ CXXFLAGS+="-lpthread"
 all : a.out
 
 
-a.out : main.o 
+a.out : test.o 
 	${CXX} -o $@ $^ ${CXXFLAGS}
 
 

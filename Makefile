@@ -9,13 +9,13 @@ CXXFLAGS+="-lpthread"
 all : a.out example/a.out
 
 
-a.out : main.o 
+a.out : test1.o 
 	${CXX} -o $@ $^ ${CXXFLAGS}
 
-b.out : cmain.o
+b.out : test2.o
 	${CXX} -o $@ $^ ${CXXFLAGS}
 
-example/a.out : example/main.o
+example/a.out : example/test.o
 	cd example && make
 
 
