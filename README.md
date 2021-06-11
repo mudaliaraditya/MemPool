@@ -1,3 +1,3 @@
 # MemPool
 
-A Simple Memory Manager Library
+A Simple Memory Management Library
