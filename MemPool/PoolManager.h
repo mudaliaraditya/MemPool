@@ -4,26 +4,37 @@
 #include "MemoryPool.h"
 #include "MemoryDefines.h"
 
+
 //std header
 #include <vector>
 #include <unordered_map>
 
+//custom typedefs
+typedef std::vector<CMemoryPool*,Mallocator<CMemoryPool*> > MemoryPoolStore;
+typedef std::unordered_map<MemAddrs,size_t,std::hash<MemAddrs>,std::equal_to<MemAddrs>,Mallocator<std::pair<const MemAddrs,size_t> > > ChunkMemoryToMemoryPoolNo;
+
+
+
 class CPoolManager
 {
 	private:
+
 		CPoolManager(size_t nMaxChunk)
 		{
 			std::unique_lock<std::mutex> lcLock(m_cMutex);
 
 			m_nMaxChunkSize = nMaxChunk;
 		}
+
 	public:
+
 		static CPoolManager& GetInst()
 		{
 			static CPoolManager s_cPool(MEMORY_POOL_SIZE);
 
 			return s_cPool;
 		}
+
 		void* GetChunk(size_t nBytes)
 		{
 			std::unique_lock<std::mutex> lcLock(m_cMutex);
@@ -41,19 +52,20 @@ class CPoolManager
 				pAddress = pool->GetChunk(nBytes);
 				if(pAddress != nullptr)
 				{
-					m_ChunkMemoryToMemoryPoolNo[pAddress] = lnCounter;
+					m_ChunkMemoryToMemoryPoolNo[(MemAddrs)pAddress] = lnCounter;
 
 					return pAddress;
 				}
 
 				lnCounter++;
 			}
-
-			CMemoryPool* pPool = new CMemoryPool(m_nMaxChunkSize);
+			void* pMem = malloc(sizeof(CMemoryPool));
+			memset(pMem,0,sizeof(CMemoryPool));
+			CMemoryPool* pPool = new(pMem)CMemoryPool(m_nMaxChunkSize);
 			pAddress = pPool->GetChunk(nBytes);
 			if(pAddress != nullptr)
 			{
-				m_ChunkMemoryToMemoryPoolNo[pAddress] = lnCounter;
+				m_ChunkMemoryToMemoryPoolNo[(MemAddrs)pAddress] = lnCounter;
 
 				m_cMemoryPoolStore.push_back(pPool);
 
@@ -67,13 +79,13 @@ class CPoolManager
 		{
 			std::unique_lock<std::mutex> lcLock(m_cMutex);
 
-			auto lcIter = m_ChunkMemoryToMemoryPoolNo.find(pMemory);
+			auto lcIter = m_ChunkMemoryToMemoryPoolNo.find((MemAddrs)pMemory);
 			if(lcIter == m_ChunkMemoryToMemoryPoolNo.end())
 			{
 				return false;
 			}
 
-			size_t lnMemoryPoolNo = m_ChunkMemoryToMemoryPoolNo[pMemory];
+			size_t lnMemoryPoolNo = m_ChunkMemoryToMemoryPoolNo[(MemAddrs)pMemory];
 
 			return m_cMemoryPoolStore[(lnMemoryPoolNo)]->ReleaseChunk(pMemory);
 		}
@@ -85,13 +97,14 @@ class CPoolManager
 
 			for(auto& pool : m_cMemoryPoolStore)
 			{
-				delete pool;
+				pool->~CMemoryPool();
+				free(pool);
 			}
 		}
 
 	private:
-		std::vector<CMemoryPool*>			m_cMemoryPoolStore;
-		std::unordered_map<void*,size_t> m_ChunkMemoryToMemoryPoolNo;
+		MemoryPoolStore			         m_cMemoryPoolStore;
+		ChunkMemoryToMemoryPoolNo        m_ChunkMemoryToMemoryPoolNo;
 		size_t									m_nMaxChunkSize;
 		std::mutex								m_cMutex;
 };

@@ -2,6 +2,7 @@
 #define MEMORY_POOL
 //custom header
 #include"MemoryDefines.h"
+#include "Mallocator.hpp"
 
 //std header
 #include<vector>
@@ -10,25 +11,36 @@
 #include<cstring>
 #include<mutex>
 
+//custom typedefs
+typedef std::map<long long,long long,std::less<long long>,Mallocator< std::pair<const long long, long long> > > UsedChunksToBytes;
+typedef std::multimap<long long,long long,std::less<long long>,Mallocator< std::pair<const long long, long long> > > FreeByteToChunks;
+
+
 class CMemoryPool
 {
 	public:
 	friend class CPoolManager;
 	~CMemoryPool()
 	{
-		delete[] m_chunk;
+		free(m_chunk);
+	}
+
+	static CMemoryPool& GetInst()
+	{
+		static CMemoryPool s_MemoryPool(MEMORY_POOL_SIZE);
+		return s_MemoryPool;
 	}
 
 	void* GetChunk(size_t nBytes)
 	{
 		std::unique_lock<std::mutex> lcLock(m_cMutex);
-		std::multimap<long long,void*>::iterator lcIter = m_cFreeByteChunks.find(nBytes);
-		if(lcIter != m_cFreeByteChunks.end())
+		FreeByteToChunks::iterator lcIter = m_cFreeByteToChunks.find(nBytes);
+		if(lcIter != m_cFreeByteToChunks.end())
 		{
 			std::cout << "found a free chunk" << std::endl;
 			m_cUsedChunksToBytes[lcIter->second] = nBytes;
-			void* pResvAddr = lcIter->second;
-			m_cFreeByteChunks.erase(lcIter);
+			void* pResvAddr =(void*) lcIter->second;
+			m_cFreeByteToChunks.erase(lcIter);
 			return pResvAddr;
 		}
 		if(nBytes > m_nSizeOfTotalChunk)
@@ -41,30 +53,35 @@ class CMemoryPool
 		}
 		std::cout << "creating a new chunk" << std::endl;
 		char* PrevFreeChunk = m_cFreeChunk;
-		m_cUsedChunksToBytes[(void*)PrevFreeChunk] = nBytes;
+		std::pair<UsedChunksToBytes::iterator,bool > lcRetVal = m_cUsedChunksToBytes.insert(std::make_pair((MemAddrs)PrevFreeChunk,nBytes));
+		if(lcRetVal.second == false)
+		{
+			return nullptr;
+		}
 		m_cFreeChunk = m_cFreeChunk + nBytes;
 		m_nFreeBytes = m_nFreeBytes - nBytes;
 		if (m_nFreeBytes == 0)
 		{
 			std::cout << "you have exhausted your memory" << std::endl;
 		}
+		std::cout << "obtained memory:" << (MemAddrs)PrevFreeChunk << std::endl;
 		return PrevFreeChunk;
 	}
 
 	bool ReleaseChunk(void* pUsedChunk)
 	{
 		std::unique_lock<std::mutex> lcLock(m_cMutex);
-		std::map<void*,long long>::iterator lcIter =  m_cUsedChunksToBytes.find(pUsedChunk);
+		UsedChunksToBytes::iterator lcIter =  m_cUsedChunksToBytes.find((MemAddrs)pUsedChunk);
 		if(lcIter == m_cUsedChunksToBytes.end())
 		{
 			throw std::runtime_error("invalid Memory");
 		}
 		std::cout << "Releasing Chunk" << std::endl;
 		long long lnBytes = lcIter->second;
-		//std::memset(pUsedChunk,0,lnBytes);
-		m_cUsedChunksToBytes.erase(pUsedChunk);
-		auto iter = m_cFreeByteChunks.insert(std::make_pair(lnBytes, pUsedChunk));
-		if(iter == m_cFreeByteChunks.end())
+		std::memset(pUsedChunk,0,lnBytes);
+		m_cUsedChunksToBytes.erase((MemAddrs)pUsedChunk);
+		FreeByteToChunks::iterator iter = m_cFreeByteToChunks.insert(std::make_pair(lnBytes, (MemAddrs)pUsedChunk));
+		if(iter == m_cFreeByteToChunks.end())
 		{
 			throw std::runtime_error("invalid Memory");
 		}
@@ -80,14 +97,15 @@ class CMemoryPool
 		std::unique_lock<std::mutex> lcLock(m_cMutex);
 		m_nSizeOfTotalChunk = nMaxChunk;
 		m_nFreeBytes = nMaxChunk;
-		m_chunk = new char[m_nSizeOfTotalChunk];
+		m_chunk = (char*)malloc(m_nSizeOfTotalChunk);
 		m_cFreeChunk = m_chunk;
 		memset(m_chunk,0,(m_nSizeOfTotalChunk));
+		std::cout << "object constructed CMemoryPool" << std::endl;
 	}
 
 	std::mutex m_cMutex;
-	std::map<void*,long long> m_cUsedChunksToBytes;
-	std::multimap<long long,void*> m_cFreeByteChunks;
+	UsedChunksToBytes m_cUsedChunksToBytes;
+	FreeByteToChunks    m_cFreeByteToChunks;
 	char* m_chunk;
 	long long   m_nSizeOfTotalChunk;
 	long long   m_nFreeBytes;

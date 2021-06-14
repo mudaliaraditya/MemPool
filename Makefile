@@ -6,7 +6,7 @@ CXXFLAGS+="-O3"
 CXXFLAGS+="-lpthread"
 
 
-all : a.out example/a.out
+all : a.out b.out example/a.out
 
 
 a.out : test1.o 

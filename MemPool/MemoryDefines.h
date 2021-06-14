@@ -6,6 +6,8 @@
 
 #define MEMORY_POOL_SIZE (1024*1024*99)
 
+typedef long long MemAddrs;
+
 template<typename T>
 inline void CallDestructor(T* t)
 {
