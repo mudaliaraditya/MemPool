@@ -2,7 +2,7 @@
 #define NEW_DEFINES
 #include "PoolManager.h"
 #include<new>
-void* operator new(std::size_t siz) throw()
+void* operator new(std::size_t siz)
 {
 	CPoolManager& p = CPoolManager::GetInst();
 	void* pAddr = p.GetChunk(siz);
@@ -27,7 +27,7 @@ void* operator new(std::size_t siz,const std::nothrow_t &tag) noexcept
 	}
 }
 
-void* operator new[](std::size_t siz) throw()
+void* operator new[](std::size_t siz)
 {
 	CPoolManager& p = CPoolManager::GetInst();
 	void* pAddr = p.GetChunk(siz);

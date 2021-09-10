@@ -1,25 +1,27 @@
 
-CXXFLAGS="--std=c++11"
-CXXFLAGS+="-g"
-CXXFLAGS+="-IMemPool"
-CXXFLAGS+="-O3"
-CXXFLAGS+="-lpthread"
 
 
-all : a.out b.out example/a.out
+
+all : example1/functions.out example2/a.out example2/b.out example3/test3.out
 
 
-a.out : test1.o 
-	${CXX} -o $@ $^ ${CXXFLAGS}
+example1/functions.out :
+	cd example1 && make
 
-b.out : test2.o
-	${CXX} -o $@ $^ ${CXXFLAGS}
 
-example/a.out : example/test.o
-	cd example && make
+example2/a.out :
+	cd example2 && make
+
+
+example2/ab.out :
+	cd example2 && make
+
+
+example3/test3.out :
+	cd example3 && make
 
 
 clean : 
-	rm *.o
-	rm *.out
-	cd example && make clean
+	cd example1 && make clean
+	cd example2 && make clean
+	cd example3 && make clean
