@@ -1,20 +1,22 @@
 
 CXXFLAGS="--std=c++11"
 CXXFLAGS+="-g"
-CXXFLAGS+="-Og"
 CXXFLAGS+="-I../MemPool"
+CXXFLAGS+="-O3"
 CXXFLAGS+="-lpthread"
 
 
-all : test3.out
+all : a.out b.out
+
+
+a.out : test1.o 
+	${CXX} -o $@ $^ ${CXXFLAGS}
+
+b.out : test2.o
+	${CXX} -o $@ $^ ${CXXFLAGS}
 
 
 
-test3.out : test3.o
-	g++ -o $@ $^ ${CXXFLAGS} 
-
-
-
-clean :
+clean : 
 	rm *.o
 	rm *.out
