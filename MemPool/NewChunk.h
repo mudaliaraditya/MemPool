@@ -58,6 +58,7 @@ void operator delete(void* pVoid)
 	return;
 }
 
+
 void operator delete[](void* pVoid)
 {
 	CPoolManager::GetInst().ReleaseChunk(pVoid);
