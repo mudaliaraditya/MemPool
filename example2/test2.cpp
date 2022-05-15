@@ -45,5 +45,8 @@ int main(int argc,char* argv[])
 	*lpnVar4 = 4;
 	*lpnVar5 = 5;
 	std::cout << *lpnVar1 << " "<< *lpnVar2 << " " << *lpnVar3 << " "<< *lpnVar4 << " " << std::endl;
-	lc.join();
+	if(lc.joinable())
+	{
+		lc.join();
+	}
 }
