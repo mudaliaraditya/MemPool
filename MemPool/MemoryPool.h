@@ -11,7 +11,6 @@
 #include<cstring>
 #include<mutex>
 
-//custom typedefs
 typedef std::map<long long,long long,std::less<long long>,Mallocator< std::pair<const long long, long long> > > UsedChunksToBytes;
 typedef std::multimap<long long,long long,std::less<long long>,Mallocator< std::pair<const long long, long long> > > FreeByteToChunks;
 
@@ -37,7 +36,6 @@ class CMemoryPool
 		FreeByteToChunks::iterator lcIter = m_cFreeByteToChunks.find(nBytes);
 		if(lcIter != m_cFreeByteToChunks.end())
 		{
-			std::cout << "found a free chunk" << std::endl;
 			m_cUsedChunksToBytes[lcIter->second] = nBytes;
 			void* pResvAddr =(void*) lcIter->second;
 			m_cFreeByteToChunks.erase(lcIter);
@@ -51,7 +49,6 @@ class CMemoryPool
 		{
 			return nullptr;
 		}
-		std::cout << "creating a new chunk" << std::endl;
 		char* PrevFreeChunk = m_cFreeChunk;
 		std::pair<UsedChunksToBytes::iterator,bool > lcRetVal = m_cUsedChunksToBytes.insert(std::make_pair((MemAddrs)PrevFreeChunk,nBytes));
 		if(lcRetVal.second == false)
@@ -62,9 +59,7 @@ class CMemoryPool
 		m_nFreeBytes = m_nFreeBytes - nBytes;
 		if (m_nFreeBytes == 0)
 		{
-			std::cout << "you have exhausted your memory" << std::endl;
 		}
-		std::cout << "obtained memory:" << (MemAddrs)PrevFreeChunk << std::endl;
 		return PrevFreeChunk;
 	}
 
@@ -76,7 +71,6 @@ class CMemoryPool
 		{
 			throw std::runtime_error("invalid Memory");
 		}
-		std::cout << "Releasing Chunk" << std::endl;
 		long long lnBytes = lcIter->second;
 		std::memset(pUsedChunk,0,lnBytes);
 		m_cUsedChunksToBytes.erase((MemAddrs)pUsedChunk);
@@ -100,7 +94,6 @@ class CMemoryPool
 		m_chunk = (char*)malloc(m_nSizeOfTotalChunk);
 		m_cFreeChunk = m_chunk;
 		memset(m_chunk,0,(m_nSizeOfTotalChunk));
-		std::cout << "object constructed CMemoryPool" << std::endl;
 	}
 
 	std::mutex m_cMutex;

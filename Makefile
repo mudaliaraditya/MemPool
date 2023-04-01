@@ -3,7 +3,7 @@
 
 
 
-all : example1/functions.out example2/a.out example2/b.out example3/test3.out example4/test4.out example5/test5.out
+all : example1/functions.out example2/a.out example2/b.out example3/test3.out example4/test4.out example5/test5.out benchmark/StdNew
 
 
 
@@ -30,10 +30,14 @@ example4/test4.out :
 example5/test5.out :
 	cd example5 && make
 
+benchmark/StdNew :
+	cd benchmark && make
+
 clean : 
 	cd example1 && make clean
 	cd example2 && make clean
 	cd example3 && make clean
 	cd example4 && make clean
 	cd example5 && make clean
+	cd benchmark && make clean
 

@@ -70,12 +70,9 @@ class Mallocator
 		pointer allocate (size_type num, const void* = 0) 
 		{
 			// print message and allocate memory with global new
-			std::cerr << "allocate " << num << " element(s)"
-				<< " of size " << sizeof(T) << std::endl;
 			//pointer ret = (pointer)(::operator new(num*sizeof(T)));
 			pointer ret = (pointer)(malloc(num*sizeof(T)));
 			std::memset(ret,0,num*sizeof(T));
-			std::cerr << " allocated at: " << (void*)ret << std::endl;
 			return ret;
 		}
 
@@ -97,9 +94,6 @@ class Mallocator
 		void deallocate (pointer p, size_type num) 
 		{
 			// print message and deallocate memory with global delete
-			std::cerr << "deallocate " << num << " element(s)"
-				<< " of size " << sizeof(T)
-				<< " at: " << (void*)p << std::endl;
 			//::operator delete((void*)p);
 			free((void*)p);
 		}
